@@ -1,0 +1,118 @@
+{
+  "name": "windows_service_failure_and_restart",
+  "description": "This incident type involves checking if a particular Windows service is running, and if it's not, then restarting it twice. This can occur due to various reasons, such as unexpected shutdown, system failure, or software malfunction. The aim is to ensure that the Windows service is up and running to avoid any disruptions in the system's functionality.",
+  "params": [
+    {
+      "name": "LOG_FILE_PATH",
+      "value": ""
+    },
+    {
+      "name": "SERVICE_NAME",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Windows Service Failure and Restart\nThis incident type involves checking if a particular Windows service is running, and if it's not, then restarting it twice. This can occur due to various reasons, such as unexpected shutdown, system failure, or software malfunction. The aim is to ensure that the Windows service is up and running to avoid any disruptions in the system's functionality."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Next Step"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_check_service_status($SERVICE_NAME)"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Restart the service"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `Restart-Service -Name ${SERVICE_NAME}`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the status of the service after restarting it"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `Get-Service -Name ${SERVICE_NAME} | Select-Object -Property Status`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the service's recovery options"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `Get-Service -Name ${SERVICE_NAME} | Select-Object -ExpandProperty CanStop, CanPauseAndContinue, CanShutdown, CanStop, StartupType, RecoveryOptions, RecoveryAction`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the service's event logs for any related errors"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `Get-EventLog -LogName System -Source ${SERVICE_NAME} -After (Get-Date).AddDays(-7) -EntryType Error`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the logs and system events to determine the root cause of the service failure."
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_service_log_checker($LOG_FILE_PATH, $SERVICE_NAME)"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## If the service is stopped due to system failure, perform a system reboot and restart the service."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_windows_service_remediation($SERVICE_NAME)"
+    }
+  ]
+}
